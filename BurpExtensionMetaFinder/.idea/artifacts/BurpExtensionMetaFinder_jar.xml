@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="BurpExtensionMetaFinder:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/BurpExtensionMetaFinder_jar</output-path>
+    <root id="archive" name="BurpExtensionMetaFinder.jar">
+      <element id="module-output" name="BurpExtensionMetaFinder" />
+    </root>
+  </artifact>
+</component>
