@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+// Author: Josue Encianr (@JosueEncinar)
 
 public class BurpExtender implements IBurpExtender, IScannerCheck
 {
