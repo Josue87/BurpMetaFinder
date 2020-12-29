@@ -5,8 +5,10 @@
 Burp Suite extension for extracting metadata from files Currently supported documents:
 * PDF
 * DOCX
+* PPTX
+* XLSX
 
-The project created at Jetbrains has been completely added.
+The project created at Jetbrains has been completely added. Don't forget to change the settings you need.
 
 ## Usage 
 
