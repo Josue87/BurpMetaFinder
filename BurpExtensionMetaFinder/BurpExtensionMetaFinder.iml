@@ -9,5 +9,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="pdfbox-2.0.22" level="project" />
     <orderEntry type="library" name="poi-ooxml-4.1.2" level="project" />
+    <orderEntry type="library" name="xmlbeans-3.1.0" level="project" />
   </component>
 </module>

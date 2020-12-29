@@ -5,8 +5,9 @@ package burp;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 // Library https://jar-download.com/artifacts/org.apache.poi/poi-ooxml
+import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.poi.openxml4j.opc.PackageProperties;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -15,9 +16,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-// Author: Josue Encianr (@JosueEncinar)
 
 public class BurpExtender implements IBurpExtender, IScannerCheck
 {
@@ -35,7 +34,7 @@ public class BurpExtender implements IBurpExtender, IScannerCheck
     }
 
     private boolean isDocument(String url_str) {
-        return url_str.endsWith(".pdf") || url_str.endsWith(".docx") || url_str.endsWith(".xls") || url_str.endsWith(".pptx");
+        return url_str.endsWith(".pdf") || url_str.endsWith(".docx") || url_str.endsWith(".xlsx") || url_str.endsWith(".pptx");
     }
 
 
@@ -63,33 +62,62 @@ public class BurpExtender implements IBurpExtender, IScannerCheck
     }
 
     private String docxMetadata(String fileName) {
-
+        File myFile = new File(fileName);
         String data = "";
-        try{
-            OPCPackage opc = OPCPackage.open(fileName);
-            PackageProperties pp = opc.getPackageProperties();
-            Optional<String> revision = pp.getRevisionProperty();
-            Optional<String> creator = pp.getCreatorProperty();
-            Optional<String> title = pp.getTitleProperty();
-            Optional<String> identifier = pp.getIdentifierProperty();
-            if (title.isPresent()){
-                data += "<li>Title: " + title.get() + "</li>";
+        try (OPCPackage pkg = OPCPackage.open(myFile, PackageAccess.READ_WRITE)) {
+            boolean someData = false;
+            POIXMLProperties props = new POIXMLProperties(pkg);
+            POIXMLProperties.CoreProperties coreProps = props.getCoreProperties();
+
+            String revision = coreProps.getRevision();
+            String creator = coreProps.getCreator();
+            String title = coreProps.getTitle();
+            String identifier = coreProps.getIdentifier();
+            String keywords = coreProps.getKeywords();
+            String subject = coreProps.getSubject();
+            String description = coreProps.getDescription();
+
+            data += "<ul>";
+
+            if (title != null){
+                data += "<li>Title: " + title + "</li>";
+                someData = true;
             }
-            if (revision.isPresent()){
-                data += "<li>Revision: " + revision.get() + "</li>";
+            if (creator != null) {
+                data += "<li>Author: " + creator + "</li>";
+                someData = true;
             }
-            if (creator.isPresent()){
-               data += "<li>Creator: " + creator.get() + "</li>";
+            if (subject != null) {
+                data += "<li>Subject: " + subject + "</li>";
+                someData = true;
             }
-            if (identifier.isPresent()){
-                data += "<li>Identifier: " + identifier.get() + "</li>";
+            if (description != null){
+                data += "<li>Description: " + description + "</li>";
+                someData = true;
             }
+            if (keywords != null){
+                data += "<li>Keywords: " + keywords + "</li>";
+                someData = true;
+            }
+            if (identifier != null){
+                data += "<li>Identifier: " + identifier + "</li>";
+                someData = true;
+            }
+            if (revision != null){
+                data += "<li>Revision: " + revision + "</li>";
+                someData = true;
+            }
+
             data += "</ul>";
-            opc.close();
-            new File(fileName).delete();
+            if (!someData){
+                data = null;
+            }
+            pkg.flush();
+            myFile.delete();
         } catch (Exception e) {
             return null;
         }
+
         return data;
     }
 
@@ -100,26 +128,35 @@ public class BurpExtender implements IBurpExtender, IScannerCheck
             File myFile = new File(fileName);
             doc = PDDocument.load(myFile);
             PDDocumentInformation info = doc.getDocumentInformation();
-
+            boolean someData = false;
             if (info.getTitle() != null){
                 data += "<li>Title: " + info.getTitle()+ "</li>";
+                someData = true;
             }
             if (info.getAuthor() != null){
                 data += "<li>Author: " + info.getAuthor() + "</li>";
-            }
-            if (info.getSubject()!= null){
-                data += "<li>Subject: " + info.getSubject()  + "</li>";
-            }
-            if (info.getKeywords()!= null){
-                data += "<li>Keywords: " + info.getKeywords() + "</li>";
+                someData = true;
             }
             if (info.getCreator() != null){
                 data += "<li>Creator: " + info.getCreator() + "</li>";
+                someData = true;
+            }
+            if (info.getSubject()!= null){
+                data += "<li>Subject: " + info.getSubject()  + "</li>";
+                someData = true;
+            }
+            if (info.getKeywords()!= null){
+                data += "<li>Keywords: " + info.getKeywords() + "</li>";
+                someData = true;
             }
             if (info.getProducer() != null){
                 data += "<li>Producer: " + info.getProducer() + "</li>";
+                someData = true;
             }
             data += "</ul>";
+            if (!someData){
+                data = null;
+            }
             myFile.delete();
 
         } catch (IOException e) {
@@ -133,10 +170,9 @@ public class BurpExtender implements IBurpExtender, IScannerCheck
     private String getMetaData(String fileName) {
         if (fileName.endsWith("pdf")) {
             return pdfMetadata(fileName);
-        } else if (fileName.endsWith("docx")){
+        } else { // docx, xlsx or pptx
             return docxMetadata(fileName);
         }
-        return null;
     }
 
 
